@@ -109,11 +109,11 @@
         <div class="card-buttons">
           <button class="my-back-btn">
           </button>
-          <button class="my-dislike-btn">
+          <button class="my-dislike-btn" @click="handleDislike">
           </button>
-          <button class="my-star-btn">
+          <button class="my-star-btn" @click="megaLike">
           </button>
-          <button class="my-like-btn">
+          <button class="my-like-btn" @click="like">
           </button>
           <button class="my-bust-btn">
           </button>
@@ -145,7 +145,7 @@ export default defineComponent({
       default: false,
     },
   },
-  emits: ["noMoreSlide", "onViewInfo"],
+  emits: ["noMoreSlide", "onViewInfo", "dislike", "like", "megaLike"],
   components: {
     IonRow,
     IonCol,
@@ -161,6 +161,16 @@ export default defineComponent({
       emit("noMoreSlide", isOnTheLeft);
     };
 
+    const handleDislike = () => {
+      emit("dislike"); // Отправляем событие вверх
+    };
+    const like = () => {
+      emit("like"); // Отправляем событие вверх
+    };
+    const megaLike = () => {
+      emit("megaLike"); // Отправляем событие вверх
+    };
+
     const handleViewInfo = () => {
       emit("onViewInfo");
     };
@@ -170,6 +180,9 @@ export default defineComponent({
     };
 
     return {
+      megaLike,
+      like,
+      handleDislike,
       checkmarkOutline,
       ellipse,
       briefcaseOutline,
