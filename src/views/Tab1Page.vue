@@ -3,45 +3,49 @@
     <IonContent className="explore-bg explore-page" :forceOverscroll="false">
       <div className="full-height safe-area-bottom" v-if="isLoading">
         <IonRow
-          className="full-height ion-justify-content-center ion-align-items-center"
+            className="full-height ion-justify-content-center ion-align-items-center"
         >
-          <RippleLoader imageUrl="assets/img/avatars/hieu.png" />
+          <RippleLoader imageUrl="assets/img/avatars/hieu.png"/>
         </IonRow>
       </div>
 
       <div
-        className="cards-container safe-area-bottom"
-        v-if="!isLoading && state.cards.length > 0"
+          className="cards-container safe-area-bottom"
+          v-if="!isLoading && state.cards.length > 0"
       >
         <SwingWrapper
-          ref="stackRef"
-          className="card-stack"
-          :config="stackConfig"
-          @setStack="handleSetStack"
-          @throwin="handleThrowIn"
-          @throwoutleft="
+            ref="stackRef"
+            className="card-stack"
+            :config="stackConfig"
+            @setStack="handleSetStack"
+            @throwin="handleThrowIn"
+            @throwoutleft="
             handleCardThrowOut($event, SwingWrapper.Direction.LEFT)
           "
-          @throwoutright="
+            @throwoutright="
             handleCardThrowOut($event, SwingWrapper.Direction.RIGHT)
           "
-          @throwoutend="handleCardThrowOutEnd"
+            @throwoutend="handleCardThrowOutEnd"
         >
           <div
-            v-for="(item, index) in state.cards"
-            :key="item.id"
-            :className="`card-item${
+              v-for="(item, index) in state.cards"
+              :key="item.id"
+              :className="`card-item${
               index < state.cards.length - 2 ? ' ion-hide' : ''
             }`"
-            data-card-id="item.id"
+              data-card-id="item.id"
           >
             <SwipeCard
-              :user="item"
-              @noMoreSlide="handleNoMoreSlide"
-              @onViewInfo="handleOpenProfile(item)"
+                :user="item"
+                @noMoreSlide="handleNoMoreSlide"
+                @onViewInfo="handleOpenProfile(item)"
+                @dislike="customDis"
+                @like="like"
+                @megaLike="like"
             />
 
             <div className="stamp stamp-like">Like</div>
+            <div className="stamp stamp-mega-like">Mega Like</div>
             <div className="stamp stamp-nope">Nope</div>
           </div>
         </SwingWrapper>
@@ -50,23 +54,23 @@
     </IonContent>
 
     <IonModal
-      swipeToClose
-      :isOpen="isMatchModalOpen"
-      :enterAnimation="modalEnterZoomOut"
-      :leaveAnimation="modalLeaveZoomIn"
+        swipeToClose
+        :isOpen="isMatchModalOpen"
+        :enterAnimation="modalEnterZoomOut"
+        :leaveAnimation="modalLeaveZoomIn"
     >
-      <MatchedModal @close="setIsMatchModalOpen(false)" />
+      <MatchedModal @close="setIsMatchModalOpen(false)"/>
     </IonModal>
 
     <IonModal :isOpen="isProfileOpen" swipeToClose>
-      <Profile v-if="state.currentProfile" :user="state.currentProfile" @close="setIsProfileOpen(false)" />
+      <Profile v-if="state.currentProfile" :user="state.currentProfile" @close="setIsProfileOpen(false)"/>
 
     </IonModal>
   </IonPage>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, reactive, onMounted } from "vue";
+import {defineComponent, ref, reactive, onMounted, provide} from "vue";
 import {
   IonPage,
   IonContent,
@@ -77,15 +81,15 @@ import {
   IonIcon,
   IonModal,
 } from "@ionic/vue";
-import { refresh, closeSharp, star, heartSharp, flash } from "ionicons/icons";
-import { modalEnterZoomOut, modalLeaveZoomIn } from "@/animations/animations";
+import {refresh, closeSharp, star, heartSharp, flash} from "ionicons/icons";
+import {modalEnterZoomOut, modalLeaveZoomIn} from "@/animations/animations";
 import USERS from "./users.dummy";
 import RippleLoader from "@/components/RippleLoader/RippleLoader.vue";
 import SwipeCard from "@/components/SwipeCard/SwipeCard.vue";
 import MatchedModal from "@/views/MatchedModal/MatchedModal.vue";
 import Profile from "@/views/Profile/Profile.vue";
 import SwingWrapper from "@/components/SwingWrapper/SwingWrapper.vue";
-import { TUser } from "@/types/types.d";
+import {TUser} from "@/types/types.d";
 import "./Explore.scss";
 
 type TState = {
@@ -129,11 +133,23 @@ export default defineComponent({
 
     const isMatchModalOpen = ref(false);
     const setIsMatchModalOpen = (state: boolean) =>
-      (isMatchModalOpen.value = state);
+        (isMatchModalOpen.value = state);
 
     const isProfileOpen = ref(false);
     const setIsProfileOpen = (state: boolean) => (isProfileOpen.value = state);
 
+    const customDis = () => {
+      handleThrowIn();
+      handleCardThrowOut(null, SwingWrapper.Direction.LEFT)
+      handleClickNope();
+      handleCardThrowOutEnd();
+    }
+    const like = () => {
+      handleClickLike
+      handleThrowIn();
+      handleCardThrowOut(null, SwingWrapper.Direction.RIGHT)
+      handleCardThrowOutEnd();
+    }
     const getData = () => {
       // API call goes here
       setIsLoading(true);
@@ -146,7 +162,7 @@ export default defineComponent({
 
     const getTopCardEl = () => {
       if (stackRef.value) {
-        const { children } = stackRef.value.$el;
+        const {children} = stackRef.value.$el;
         let targetEl;
 
         if (children.length >= 1) {
@@ -161,7 +177,7 @@ export default defineComponent({
 
     const getNextCardEl = () => {
       if (stackRef.value) {
-        const { children } = stackRef.value.$el;
+        const {children} = stackRef.value.$el;
         let targetEl;
 
         if (children.length >= 2) {
@@ -200,7 +216,7 @@ export default defineComponent({
     const handleButtonClicked = (type = "NOPE") => {
       if (state.isLocked) return false;
 
-      const { stack } = state;
+      const {stack} = state;
 
       if (stackRef.value && stack) {
         const topCardEl = getTopCardEl();
@@ -215,15 +231,15 @@ export default defineComponent({
           setTimeout(() => {
             const card = stack.getCard(topCardEl);
             const throwX =
-              type === "NOPE"
-                ? -0.5 * topCardEl.offsetWidth
-                : 0.5 * topCardEl.offsetWidth;
+                type === "NOPE"
+                    ? -0.5 * topCardEl.offsetWidth
+                    : 0.5 * topCardEl.offsetWidth;
             card.throwOut(
-              throwX,
-              20,
-              type === "NOPE"
-                ? SwingWrapper.Direction.LEFT
-                : SwingWrapper.Direction.RIGHT
+                throwX,
+                20,
+                type === "NOPE"
+                    ? SwingWrapper.Direction.LEFT
+                    : SwingWrapper.Direction.RIGHT
             );
           }, 500);
         }
@@ -246,10 +262,10 @@ export default defineComponent({
 
     // Called whenever we drag an element
     const handleCardDragging = (
-      element: HTMLElement,
-      x: number,
-      y: number,
-      r: number
+        element: HTMLElement,
+        x: number,
+        y: number,
+        r: number
     ) => {
       const calculatedValue = Math.min(100, Math.abs(x) - 20) / 100; // 0 <-> 1 for Opacity
 
@@ -269,7 +285,7 @@ export default defineComponent({
         window.requestAnimationFrame(() => {
           if (nextCardEl) {
             nextCardEl.style.transform = `translate3d(0,0,0) scale(${
-              0.94 + 0.06 * calculatedValue
+                0.94 + 0.06 * calculatedValue
             }, ${0.94 + 0.06 * calculatedValue})`;
           }
         });
@@ -282,8 +298,8 @@ export default defineComponent({
     };
 
     const handleCardThrowOut = (
-      e: any,
-      direction = SwingWrapper.Direction.LEFT
+        e: any,
+        direction = SwingWrapper.Direction.LEFT
     ) => {
       state.isLocked = true;
 
@@ -294,12 +310,13 @@ export default defineComponent({
       }
 
       console.log(
-        `${
-          direction === SwingWrapper.Direction.LEFT
-            ? "SWIPED LEFT"
-            : "SWIPED RIGHT"
-        }: ${removedCard.name}`
+          `${
+              direction === SwingWrapper.Direction.LEFT
+                  ? "SWIPED LEFT"
+                  : "SWIPED RIGHT"
+          }: ${removedCard.name}`
       );
+
     };
 
     const handleThrowIn = () => {
@@ -307,7 +324,7 @@ export default defineComponent({
     };
 
     const handleCardThrowOutEnd = () => {
-      const { cards: cardList } = state;
+      const {cards: cardList} = state;
 
       // Remove the last element
       cardList.pop();
@@ -346,8 +363,8 @@ export default defineComponent({
     };
 
     /**
-      Read more: https://github.com/gajus/swing#configuration
-    */
+     Read more: https://github.com/gajus/swing#configuration
+     */
     const stackConfig = {
       // Default setting only allows UP, LEFT and RIGHT so you can override this as below
       allowedDirections: [
@@ -355,9 +372,9 @@ export default defineComponent({
         SwingWrapper.Direction.RIGHT,
       ],
       throwOutConfidence: (
-        offsetX: number,
-        _offsetY: number,
-        element: HTMLElement
+          offsetX: number,
+          _offsetY: number,
+          element: HTMLElement
       ) => {
         return Math.min(Math.abs(offsetX) / (element.offsetWidth / 2), 1);
       },
@@ -374,6 +391,8 @@ export default defineComponent({
     });
 
     return {
+      like,
+      customDis,
       refresh,
       closeSharp,
       star,
