@@ -11,7 +11,7 @@ export default defineConfig({
     vue(),
     legacy()
   ],
-  base: '/',
+  base: '/tinder/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
